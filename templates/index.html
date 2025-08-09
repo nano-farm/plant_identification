@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plant Leaf Disease Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            color: #2e7d32;
+        }
+        form {
+            margin: 20px 0;
+        }
+        input[type="file"] {
+            padding: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            background: white;
+            display: inline-block;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: left;
+            max-width: 500px;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Plant Leaf Disease Classifier</h2>
+    <p>Upload a leaf image of either a tomato or chili plant to identify possible diseases and get care suggestions.</p>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if prediction %}
+        <div class="result">
+            <h3>Plant: {{ plant }}</h3>
+            <h3>Disease: {{ prediction }}</h3>
+            <h4>Suggested Solution:</h4>
+            <p>{{ solution }}</p>
+            <img src="{{ image_url }}" alt="Uploaded Leaf">
+        </div>
+    {% endif %}
+</body>
+</html>
