@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+venv/
+*.egg-info/
+*.so
+
+# Environment
+.env
+.env.local
+*.env
+
+# Dataset and binary files
+*.zip
+/data/
+/train/
+/valid/
+/chilly_dataset/
+
+# Models
+/models/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
