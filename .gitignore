@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+*.so
+venv/
+
+# Environment
+.env
+.env.local
+*.env
+
+# Dataset and binary files
+*.zip
+/data/
+*/train/
+*/valid/
+chilly_dataset/
+
+# Model checkpoints and trained models
+/models/*.h5
+/models/*.ckpt
+/models/*.pb
+
+# Logs
+*.log
+*.csv   # keep ignoring CSV, but not all TXT
+train.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
