@@ -48,7 +48,9 @@ def load_model_and_classes(name):
     else:
         raise ValueError("Unsupported plant type")
 
-    model = load_model(model_path)
+    # ✅ Fix: compile=False to avoid batch_shape error
+    model = load_model(model_path, compile=False)
+
     with open(class_path, "r") as f:
         class_idx = json.load(f)
     inv_class_idx = {int(v): k for k, v in class_idx.items()}
@@ -135,4 +137,4 @@ def index():
     return render_template("index.html", prediction=None, plant=None, solution=None, image_url=None)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
