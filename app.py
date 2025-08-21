@@ -1,204 +1,138 @@
 import os
-from flask import Flask, request, render_template
+import uuid
+import json
+import gdown
+from flask import Flask, request, render_template, url_for
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 import numpy as np
-from PIL import Image
 
-# Initialize Flask app
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Load model and class indices
-MODEL_PATH = 'models/leaf_classifier.h5'
-CLASS_INDICES_PATH = 'class_indices.json'
+# ========= Google Drive file IDs =========
+DRIVE_FILES = {
+    "chili_disease_model.h5": "1Fj6sIVjhjkTRPdnjRDuOF_HMgDsAKWuV",
+    "chili_class_indices.json": "1W9jXgq39UXF7BW2RPTk6UJyIkHs3g57q",
+    "tomato_disease_model.h5": "1F_9Vof3y9zjlrLCAsAzRk1glsf8pCN5s",
+    "tomato_class_indices.json": "16VBgOJ6pJhuG15l6pjGb765VCc_9MmXO"
+}
 
-model = load_model(MODEL_PATH)
+MODEL_DIR = "models"
+os.makedirs(MODEL_DIR, exist_ok=True)
 
-import json
-with open(CLASS_INDICES_PATH, 'r') as f:
-    class_indices = json.load(f)
+# ========= Function to download from Google Drive =========
+def download_from_drive(filename, file_id):
+    file_path = os.path.join(MODEL_DIR, filename)
+    if not os.path.exists(file_path):
+        print(f"Downloading {filename} from Google Drive...")
+        gdown.download(f"https://drive.google.com/uc?id={file_id}", file_path, quiet=False)
+    return file_path
 
-# Reverse mapping from index to class name
-classes = {v: k for k, v in class_indices.items()}
+# ========= Ensure all models exist locally =========
+for fname, fid in DRIVE_FILES.items():
+    download_from_drive(fname, fid)
 
-# === Disease info mapping ===
-disease_info = {
-    # Tomato diseases
-    "Tomato__Target_Spot": {
-        "name": "Target Spot",
-        "solution": (
-            "Remove all infected leaves and plant debris to prevent further spread. "
-            "Apply fungicides such as chlorothalonil or copper-based sprays every 7–10 days. "
-            "Ensure proper spacing between plants for airflow and avoid wetting leaves during irrigation."
-        )
-    },
-    "Tomato__Tomato_mosaic_virus": {
-        "name": "Tomato Mosaic Virus",
-        "solution": (
-            "Immediately remove and destroy infected plants to stop virus spread. "
-            "Disinfect garden tools regularly with a bleach solution. "
-            "Plant resistant tomato varieties and avoid smoking near plants as the virus can spread via hands."
-        )
-    },
-    "Tomato__Tomato_YellowLeaf__Curl_Virus": {
-        "name": "Yellow Leaf Curl Virus",
-        "solution": (
-            "Control whiteflies using yellow sticky traps or insecticidal soap. "
-            "Remove infected plants promptly. "
-            "Use virus-resistant tomato varieties and practice crop rotation to reduce chances of infection."
-        )
-    },
-    "Tomato_Bacterial_spot": {
-        "name": "Bacterial Spot",
-        "solution": (
-            "Use only certified disease-free seeds and seedlings. "
-            "Apply copper-based bactericides weekly during warm, wet conditions. "
-            "Avoid overhead watering and maintain good spacing to reduce humidity around plants."
-        )
-    },
-    "Tomato_Early_blight": {
-        "name": "Early Blight",
-        "solution": (
-            "Remove infected leaves as soon as they appear. "
-            "Spray fungicides containing mancozeb or chlorothalonil. "
-            "Water at the base of the plants and rotate crops every 2–3 years."
-        )
-    },
-    "Tomato_healthy": {
-        "name": "Healthy",
-        "solution": (
-            "No action needed. Keep monitoring the plants regularly for any early signs of disease. "
-            "Maintain proper watering and nutrition to keep plants strong."
-        )
-    },
-    "Tomato_Late_blight": {
-        "name": "Late Blight",
-        "solution": (
-            "Quickly remove and destroy infected plants to prevent spread. "
-            "Apply fungicides containing copper or chlorothalonil at the first sign of symptoms. "
-            "Avoid working in the garden when plants are wet."
-        )
-    },
-    "Tomato_Leaf_Mold": {
-        "name": "Leaf Mold",
-        "solution": (
-            "Improve air circulation by pruning lower leaves. "
-            "Avoid overhead irrigation. "
-            "If severe, apply fungicides containing mancozeb or copper at regular intervals."
-        )
-    },
-    "Tomato_Septoria_leaf_spot": {
-        "name": "Septoria Leaf Spot",
-        "solution": (
-            "Remove and destroy infected leaves immediately. "
-            "Apply fungicides such as chlorothalonil every 7–10 days. "
-            "Keep foliage dry and rotate crops yearly."
-        )
-    },
-    "Tomato_Spider_mites_Two_spotted_spider_mite": {
-        "name": "Spider Mites",
-        "solution": (
-            "Spray with neem oil or insecticidal soap every 5–7 days until infestation is under control. "
-            "Increase humidity around plants and encourage beneficial insects such as ladybugs."
-        )
-    },
+# ========= Load models =========
+models = {}
+class_names = {}
 
-    # Chili leaf diseases
-    "Bacterial-spot": {
-        "name": "Bacterial Spot (Chili)",
-        "solution": (
-            "Remove infected leaves and avoid overhead watering. "
-            "Apply copper-based bactericides weekly during humid conditions. "
-            "Rotate crops and avoid planting chili in the same soil for at least 2 years."
-        )
+def load_model_and_classes(name):
+    if name == "chili":
+        model_path = os.path.join(MODEL_DIR, "chili_disease_model.h5")
+        class_path = os.path.join(MODEL_DIR, "chili_class_indices.json")
+    elif name == "tomato":
+        model_path = os.path.join(MODEL_DIR, "tomato_disease_model.h5")
+        class_path = os.path.join(MODEL_DIR, "tomato_class_indices.json")
+    else:
+        raise ValueError("Unsupported plant type")
+
+    model = load_model(model_path)
+    with open(class_path, "r") as f:
+        class_idx = json.load(f)
+    inv_class_idx = {int(v): k for k, v in class_idx.items()}
+    return model, inv_class_idx
+
+models["chili"], class_names["chili"] = load_model_and_classes("chili")
+models["tomato"], class_names["tomato"] = load_model_and_classes("tomato")
+
+# ========= Image preprocessing =========
+def prepare_image(img_path, target_size=(224, 224)):
+    img = image.load_img(img_path, target_size=target_size)
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array /= 255.0
+    return img_array
+
+def model_predict(filepath, plant_type):
+    img = prepare_image(filepath)
+    preds = models[plant_type].predict(img)
+    class_idx = np.argmax(preds, axis=1)[0]
+    confidence = np.max(preds)
+    predicted_class = class_names[plant_type].get(class_idx, None)
+    return predicted_class, confidence
+
+# ========= Disease solutions =========
+solution_dict = {
+    "chili": {
+        "Bacterial-spot": "Use disease-free seeds, copper sprays, and avoid overhead irrigation.",
+        "Cercospora-leaf-spot": "Apply fungicides, remove infected leaves, and improve plant spacing.",
+        "curl-virus": "Control aphids and whiteflies, remove infected plants.",
+        "Healthy-Leaf": "No action needed. Maintain proper care.",
+        "Nutrition-deficiency": "Apply balanced fertilizers and improve soil health.",
+        "Unlabeled": "No diagnosis available. Upload a clearer image.",
+        "White-spot": "Remove affected leaves and apply appropriate fungicides."
     },
-    "Cercospora-leaf-spot": {
-        "name": "Cercospora Leaf Spot",
-        "solution": (
-            "Prune infected leaves and improve airflow between plants. "
-            "Spray fungicides containing copper or mancozeb every 10–14 days. "
-            "Remove plant debris after harvest to prevent re-infection."
-        )
-    },
-    "curl-virus": {
-        "name": "Chili Curl Virus",
-        "solution": (
-            "Control whiteflies with sticky traps or neem oil sprays. "
-            "Immediately remove infected plants to limit spread. "
-            "Plant virus-resistant chili varieties when available."
-        )
-    },
-    "Healthy-Leaf": {
-        "name": "Healthy Leaf",
-        "solution": (
-            "No action needed. Continue providing proper watering, balanced fertilization, "
-            "and regular observation to keep the plant in optimal health."
-        )
-    },
-    "Nutrition-deficiency": {
-        "name": "Nutrient Deficiency",
-        "solution": (
-            "Identify the specific nutrient lacking (nitrogen, potassium, magnesium, etc.) through soil testing. "
-            "Apply the recommended fertilizer in balanced amounts. "
-            "Mulch around plants to retain soil nutrients."
-        )
-    },
-    "Unlabeled": {
-        "name": "Unlabeled Data",
-        "solution": (
-            "The image may not match any trained category. "
-            "Try uploading a clearer image, or update the training dataset with more labeled samples."
-        )
-    },
-    "White-spot": {
-        "name": "White Spot",
-        "solution": (
-            "Remove affected leaves and avoid excessive moisture on foliage. "
-            "Apply sulfur-based fungicides every 10 days until symptoms subside. "
-            "Maintain proper plant spacing to allow airflow."
-        )
+    "tomato": {
+        "Tomato__Target_Spot": "Remove infected leaves, apply fungicides, and rotate crops to prevent spread.",
+        "Tomato__Tomato_mosaic_virus": "Remove and destroy infected plants, disinfect tools, and use virus-resistant varieties.",
+        "Tomato__Tomato_YellowLeaf__Curl_Virus": "Control whitefly vectors, remove infected plants, and use resistant varieties.",
+        "Tomato_Bacterial_spot": "Use copper-based bactericides and avoid overhead irrigation.",
+        "Tomato_Early_blight": "Remove infected leaves, apply fungicides, and rotate crops.",
+        "Tomato_healthy": "No action needed. Keep monitoring for signs of disease.",
+        "Tomato_Late_blight": "Remove infected plants and apply preventive fungicides.",
+        "Tomato_Leaf_Mold": "Increase air circulation, avoid overhead watering, and use fungicides.",
+        "Tomato_Septoria_leaf_spot": "Remove infected leaves and use fungicides.",
+        "Tomato_Spider_mites_Two_spotted_spider_mite": "Use miticides and encourage beneficial predatory insects."
     }
 }
 
-# Prediction function
-def model_predict(img_path, model):
-    img = Image.open(img_path).convert('RGB')
-    img = img.resize((224, 224))  # Ensure this matches your training size
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = x / 255.0  # Normalization
-
-    preds = model.predict(x)
-    pred_class = np.argmax(preds, axis=1)[0]
-    class_name = classes[pred_class]
-
-    return class_name
-
-# Routes
-@app.route('/', methods=['GET', 'POST'])
+# ========= Routes =========
+@app.route("/", methods=["GET", "POST"])
 def index():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return render_template('index.html', prediction="No file uploaded.")
+    if request.method == "POST":
+        plant_type = request.form.get("plant_type")
+        if plant_type not in ["chili", "tomato"]:
+            return render_template("index.html", prediction="Invalid plant type", plant=None, solution=None, image_url=None)
 
-        file = request.files['file']
-        if file.filename == '':
-            return render_template('index.html', prediction="No file selected.")
+        if "file" not in request.files:
+            return render_template("index.html", prediction="No file uploaded", plant=None, solution=None, image_url=None)
 
-        if file:
-            filepath = os.path.join('static', file.filename)
-            file.save(filepath)
+        file = request.files["file"]
+        if file.filename == "":
+            return render_template("index.html", prediction="No file selected", plant=None, solution=None, image_url=None)
 
-            pred_class_name = model_predict(filepath, model)
-            plant_name = disease_info.get(pred_class_name, {}).get("name", "Unknown")
-            solution = disease_info.get(pred_class_name, {}).get("solution", "No solution available.")
+        # Save file
+        filename = f"{uuid.uuid4().hex}_{file.filename}"
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(filepath)
 
-            return render_template('index.html',
-                                   prediction=plant_name,
-                                   solution=solution,
-                                   image_url=filepath)
+        try:
+            predicted_class, confidence = model_predict(filepath, plant_type)
+            solution = solution_dict.get(plant_type, {}).get(predicted_class, "No solution found.")
+        except Exception as e:
+            return render_template("index.html", prediction=f"Error: {str(e)}", plant=None, solution=None, image_url=None)
 
-    return render_template('index.html')
+        prediction_text = f"{predicted_class.replace('_', ' ')} ({confidence*100:.1f}% confidence)" if confidence > 0.1 else f"Uncertain: {predicted_class.replace('_', ' ')}"
 
-if __name__ == '__main__':
+        return render_template("index.html",
+                               prediction=prediction_text,
+                               plant=plant_type.capitalize(),
+                               solution=solution,
+                               image_url=url_for("static", filename=f"uploads/{filename}"))
+
+    return render_template("index.html", prediction=None, plant=None, solution=None, image_url=None)
+
+if __name__ == "__main__":
     app.run(debug=True)

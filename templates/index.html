@@ -14,23 +14,57 @@
         h2 {
             color: #2e7d32;
         }
+        .upload-section {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .plant-option {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .plant-title {
+            color: #e53935;
+            margin-top: 0;
+        }
+        .plant-title.tomato {
+            color: #d81b60;
+        }
         form {
-            margin: 20px 0;
+            margin: 15px 0;
         }
         input[type="file"] {
-            padding: 8px;
+            display: none;
+        }
+        .file-label {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .file-label:hover {
+            background-color: #45a049;
         }
         button {
             padding: 10px 20px;
-            background-color: #4caf50;
+            background-color: #388e3c;
             border: none;
             color: white;
             cursor: pointer;
             font-size: 16px;
             border-radius: 4px;
+            width: 100%;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #2e7d32;
         }
         .result {
             background: white;
@@ -47,25 +81,67 @@
             border-radius: 8px;
             margin-top: 10px;
         }
+        .selected-file {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <h2>Plant Leaf Disease Classifier</h2>
-    <p>Upload a leaf image of either a tomato or chili plant to identify possible diseases and get care suggestions.</p>
+    <p>Select your plant type and upload a leaf image to identify possible diseases and get care suggestions.</p>
 
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" accept="image/*" required>
-        <button type="submit">Predict</button>
-    </form>
+    <div class="upload-section">
+        <!-- Chili Form -->
+        <div class="plant-option">
+            <h3 class="plant-title">Chili Plant</h3>
+            <form method="POST" action="/" enctype="multipart/form-data" id="chiliForm">
+                <input type="hidden" name="plant_type" value="chili">
+                <label for="chiliFile" class="file-label">Choose Chili Leaf Image</label>
+                <input type="file" id="chiliFile" name="file" accept="image/*" required>
+                <div class="selected-file" id="chiliFileName">No file selected</div>
+                <button type="submit">Analyze Chili Leaf</button>
+            </form>
+        </div>
+
+        <!-- Tomato Form -->
+        <div class="plant-option">
+            <h3 class="plant-title tomato">Tomato Plant</h3>
+            <form method="POST" action="/" enctype="multipart/form-data" id="tomatoForm">
+                <input type="hidden" name="plant_type" value="tomato">
+                <label for="tomatoFile" class="file-label">Choose Tomato Leaf Image</label>
+                <input type="file" id="tomatoFile" name="file" accept="image/*" required>
+                <div class="selected-file" id="tomatoFileName">No file selected</div>
+                <button type="submit">Analyze Tomato Leaf</button>
+            </form>
+        </div>
+    </div>
 
     {% if prediction %}
         <div class="result">
-            <h3>Plant: {{ plant }}</h3>
-            <h3>Disease: {{ prediction }}</h3>
-            <h4>Suggested Solution:</h4>
+            <h3>🌱 Plant: {{ plant }}</h3>
+            <h3>🦠 Disease: {{ prediction }}</h3>
+            <h4>💡 Suggested Solution:</h4>
             <p>{{ solution }}</p>
-            <img src="{{ image_url }}" alt="Uploaded Leaf">
+            {% if image_url %}
+                <img src="{{ image_url }}" alt="Uploaded Leaf">
+            {% endif %}
         </div>
     {% endif %}
+
+    <script>
+        // Show selected file name for chili
+        document.getElementById('chiliFile').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+            document.getElementById('chiliFileName').textContent = fileName;
+        });
+
+        // Show selected file name for tomato
+        document.getElementById('tomatoFile').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+            document.getElementById('tomatoFileName').textContent = fileName;
+        });
+    </script>
 </body>
 </html>
