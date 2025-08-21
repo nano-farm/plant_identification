@@ -4,8 +4,7 @@ numpy==1.26.0
 protobuf==3.20.3
 
 # TensorFlow Ecosystem
-tensorflow==2.15.0
-tensorflow-intel==2.15.0
+tensorflow-cpu==2.15.0
 keras==2.15.0
 tensorboard==2.15.1
 tensorflow-io-gcs-filesystem==0.31.0
@@ -61,3 +60,4 @@ Werkzeug==3.1.0
 # Deployment
 Flask==3.0.3
 gunicorn==23.0.0
+gdown==4.8.1
