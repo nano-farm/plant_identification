@@ -11,19 +11,19 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Paths for Keras V3 models
+# Paths for Keras 3 .keras models
 CHILI_MODEL_PATH = 'models/chili_disease_model.keras'
 CHILI_CLASS_INDICES_PATH = 'models/chili_class_indices.json'
 
 TOMATO_MODEL_PATH = 'models/tomato_disease_model.keras'
 TOMATO_CLASS_INDICES_PATH = 'models/tomato_class_indices.json'
 
-# Load models and class indices
+# Dictionaries to hold models and class names
 models = {}
 class_names = {}
 
 def load_model_and_classes(name):
-    """Load model and class indices safely."""
+    """Load Keras 3 model and class indices safely."""
     if name == 'chili':
         model_path, class_path = CHILI_MODEL_PATH, CHILI_CLASS_INDICES_PATH
     elif name == 'tomato':
@@ -36,7 +36,11 @@ def load_model_and_classes(name):
     if not os.path.exists(class_path):
         raise FileNotFoundError(f"Class indices file not found: {class_path}")
 
-    model = load_model(model_path)
+    try:
+        model = load_model(model_path, compile=False)
+    except Exception as e:
+        raise RuntimeError(f"Failed to load {name} model: {e}")
+
     with open(class_path, 'r') as f:
         class_idx = json.load(f)
 
@@ -44,7 +48,7 @@ def load_model_and_classes(name):
     inv_class_idx = {int(v): k for k, v in class_idx.items()}
     return model, inv_class_idx
 
-# Initialize at startup
+# Load models at startup
 models['chili'], class_names['chili'] = load_model_and_classes('chili')
 models['tomato'], class_names['tomato'] = load_model_and_classes('tomato')
 
