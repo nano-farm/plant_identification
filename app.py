@@ -42,12 +42,11 @@ models = {}
 class_names = {}
 
 def load_model_and_classes(name):
+    """Load model and corresponding class indices."""
     if name == 'chili':
-        model_path = CHILI_MODEL_PATH
-        class_path = CHILI_CLASS_INDICES_PATH
+        model_path, class_path = CHILI_MODEL_PATH, CHILI_CLASS_INDICES_PATH
     elif name == 'tomato':
-        model_path = TOMATO_MODEL_PATH
-        class_path = TOMATO_CLASS_INDICES_PATH
+        model_path, class_path = TOMATO_MODEL_PATH, TOMATO_CLASS_INDICES_PATH
     else:
         raise ValueError("Unsupported plant type")
 
@@ -59,25 +58,29 @@ def load_model_and_classes(name):
     model = load_model(model_path)
     with open(class_path, 'r') as f:
         class_idx = json.load(f)
-    # Convert keys to int if necessary (JSON keys are strings)
+
+    # Convert to {int: class_name}
     inv_class_idx = {int(v): k for k, v in class_idx.items()}
     return model, inv_class_idx
 
+# Initialize models
 models['chili'], class_names['chili'] = load_model_and_classes('chili')
 models['tomato'], class_names['tomato'] = load_model_and_classes('tomato')
 
 def prepare_image(img_path, target_size=(224, 224)):
+    """Load and preprocess image for prediction."""
     img = image.load_img(img_path, target_size=target_size)
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
-    img_array /= 255.0  # Normalize if your model expects this
+    img_array /= 255.0
     return img_array
 
 def model_predict(filepath, plant_type):
+    """Run model prediction and return class + confidence."""
     img = prepare_image(filepath)
     preds = models[plant_type].predict(img)
     class_idx = np.argmax(preds, axis=1)[0]
-    confidence = np.max(preds)
+    confidence = float(np.max(preds))
     predicted_class = class_names[plant_type].get(class_idx, None)
     return predicted_class, confidence
 
@@ -111,23 +114,11 @@ def index():
     if request.method == 'POST':
         plant_type = request.form.get('plant_type')
         if plant_type not in ['chili', 'tomato']:
-            error_msg = 'Invalid plant type selected'
-            if request.accept_mimetypes.best == 'application/json':
-                return jsonify({'error': error_msg}), 400
-            return render_template('index.html', prediction=error_msg, plant=None, solution=None, image_url=None)
+            return render_template('index.html', prediction="Invalid plant type", plant=None, solution=None, image_url=None)
 
-        if 'file' not in request.files:
-            error_msg = 'No file uploaded'
-            if request.accept_mimetypes.best == 'application/json':
-                return jsonify({'error': error_msg}), 400
-            return render_template('index.html', prediction=error_msg, plant=None, solution=None, image_url=None)
-
-        file = request.files['file']
-        if file.filename == '':
-            error_msg = 'No file selected'
-            if request.accept_mimetypes.best == 'application/json':
-                return jsonify({'error': error_msg}), 400
-            return render_template('index.html', prediction=error_msg, plant=None, solution=None, image_url=None)
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            return render_template('index.html', prediction="No file uploaded", plant=None, solution=None, image_url=None)
 
         # Save uploaded file with unique name
         filename = f"{uuid.uuid4().hex}_{file.filename}"
@@ -136,37 +127,22 @@ def index():
 
         try:
             predicted_class, confidence = model_predict(filepath, plant_type)
-            if predicted_class is None:
+            if not predicted_class:
                 raise ValueError("Prediction class not found in class names")
+
             solution = solution_dict.get(plant_type, {}).get(predicted_class, "No solution found.")
+            prediction_text = f"{predicted_class.replace('_', ' ')} ({confidence*100:.1f}% confidence)" if confidence > 0.1 else f"Uncertain: {predicted_class.replace('_', ' ')}"
+
         except Exception as e:
-            error_msg = f"Error during prediction: {str(e)}"
-            if request.accept_mimetypes.best == 'application/json':
-                return jsonify({'error': error_msg}), 500
-            return render_template('index.html', prediction=error_msg, plant=None, solution=None, image_url=None)
+            return render_template('index.html', prediction=f"Error: {e}", plant=None, solution=None, image_url=None)
 
-        # Prepare text to show confidence in %
-        if confidence > 0.1:
-            prediction_text = f"{predicted_class.replace('_', ' ')} ({confidence*100:.1f}% confidence)"
-        else:
-            prediction_text = f"Uncertain: {predicted_class.replace('_', ' ')}"
-
-        if request.accept_mimetypes.best == 'application/json':
-            return jsonify({
-                'plant': plant_type,
-                'prediction': predicted_class,
-                'solution': solution,
-                'confidence': float(confidence)
-            })
-
-        # Render HTML page with results
         return render_template('index.html',
                                prediction=prediction_text,
                                plant=plant_type.capitalize(),
                                solution=solution,
                                image_url=url_for('static', filename=f'uploads/{filename}'))
 
-    # GET request just renders empty form
+    # GET request
     return render_template('index.html', prediction=None, plant=None, solution=None, image_url=None)
 
 if __name__ == '__main__':
