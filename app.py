@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Google Drive file IDs for models and class indices
+# Google Drive file IDs
 DRIVE_FILES = {
     "chili_disease_model.h5": "1Fj6sIVjhjkTRPdnjRDuOF_HMgDsAKWuV",
     "chili_class_indices.json": "1W9jXgq39UXF7BW2RPTk6UJyIkHs3g57q",
@@ -19,12 +19,11 @@ DRIVE_FILES = {
     "tomato_class_indices.json": "16VBgOJ6pJhuG15l6pjGb765VCc_9MmXO"
 }
 
-# Ensure local models/ directory exists
-os.makedirs("models", exist_ok=True)
-
-# Function to download files safely
 def download_model_if_missing(filename, file_id):
-    local_path = os.path.join("models", filename)
+    """
+    Downloads file from Google Drive if not already in the root directory.
+    """
+    local_path = filename  # save directly in project root
     if not os.path.exists(local_path):
         print(f"Downloading {filename} from Google Drive...")
         url = f"https://drive.google.com/uc?id={file_id}"
@@ -34,17 +33,15 @@ def download_model_if_missing(filename, file_id):
             print(f"Failed to download {filename}: {e}")
     return local_path
 
-# Download all required files
+# Download all files if missing
 for filename, file_id in DRIVE_FILES.items():
     download_model_if_missing(filename, file_id)
 
-# Paths for chili
-CHILI_MODEL_PATH = 'models/chili_disease_model.h5'
-CHILI_CLASS_INDICES_PATH = 'models/chili_class_indices.json'
-
-# Paths for tomato
-TOMATO_MODEL_PATH = 'models/tomato_disease_model.h5'
-TOMATO_CLASS_INDICES_PATH = 'models/tomato_class_indices.json'
+# Example paths to load models
+CHILI_MODEL_PATH = "chili_disease_model.h5"
+CHILI_CLASS_INDICES_PATH = "chili_class_indices.json"
+TOMATO_MODEL_PATH = "tomato_disease_model.h5"
+TOMATO_CLASS_INDICES_PATH = "tomato_class_indices.json"
 
 # Load models and class indices at app startup
 models = {}
