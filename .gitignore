@@ -19,7 +19,6 @@ venv/
 chilly_dataset/
 
 # Model checkpoints and trained models
-/models/*.h5
 /models/*.ckpt
 /models/*.pb
 
