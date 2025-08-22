@@ -11,11 +11,40 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Paths to models (update if you resaved them)
-CHILI_MODEL_PATH = "models/chili_disease_model.h5"
-CHILI_CLASS_INDICES_PATH = "models/chili_class_indices.json"
-TOMATO_MODEL_PATH = "models/tomato_disease_model.h5"
-TOMATO_CLASS_INDICES_PATH = "models/tomato_class_indices.json"
+# Google Drive file IDs for models and class indices
+DRIVE_FILES = {
+    "chili_disease_model.h5": "1Fj6sIVjhjkTRPdnjRDuOF_HMgDsAKWuV",
+    "chili_class_indices.json": "1W9jXgq39UXF7BW2RPTk6UJyIkHs3g57q",
+    "tomato_disease_model.h5": "1F_9Vof3y9zjlrLCAsAzRk1glsf8pCN5s",
+    "tomato_class_indices.json": "16VBgOJ6pJhuG15l6pjGb765VCc_9MmXO"
+}
+
+# Ensure local models/ directory exists
+os.makedirs("models", exist_ok=True)
+
+# Function to download files safely
+def download_model_if_missing(filename, file_id):
+    local_path = os.path.join("models", filename)
+    if not os.path.exists(local_path):
+        print(f"Downloading {filename} from Google Drive...")
+        url = f"https://drive.google.com/uc?id={file_id}"
+        try:
+            gdown.download(url, output=local_path, quiet=False)
+        except Exception as e:
+            print(f"Failed to download {filename}: {e}")
+    return local_path
+
+# Download all required files
+for filename, file_id in DRIVE_FILES.items():
+    download_model_if_missing(filename, file_id)
+
+# Paths for chili
+CHILI_MODEL_PATH = 'models/chili_disease_model.h5'
+CHILI_CLASS_INDICES_PATH = 'models/chili_class_indices.json'
+
+# Paths for tomato
+TOMATO_MODEL_PATH = 'models/tomato_disease_model.h5'
+TOMATO_CLASS_INDICES_PATH = 'models/tomato_class_indices.json'
 
 # Load models and class indices
 models = {}
@@ -126,5 +155,4 @@ def index():
 
 # Bind to Render's port
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
