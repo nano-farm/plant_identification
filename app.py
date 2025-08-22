@@ -1,7 +1,6 @@
 import os
 import uuid
 import json
-import gdown
 from flask import Flask, request, render_template, url_for
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
@@ -11,39 +10,13 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Google Drive file IDs
-DRIVE_FILES = {
-    "chili_disease_model.h5": "1Fj6sIVjhjkTRPdnjRDuOF_HMgDsAKWuV",
-    "chili_class_indices.json": "1W9jXgq39UXF7BW2RPTk6UJyIkHs3g57q",
-    "tomato_disease_model.h5": "1F_9Vof3y9zjlrLCAsAzRk1glsf8pCN5s",
-    "tomato_class_indices.json": "16VBgOJ6pJhuG15l6pjGb765VCc_9MmXO"
-}
+# Paths to your committed models
+CHILI_MODEL_PATH = "models/chili_disease_model.h5"
+CHILI_CLASS_INDICES_PATH = "models/chili_class_indices.json"
+TOMATO_MODEL_PATH = "models/tomato_disease_model.h5"
+TOMATO_CLASS_INDICES_PATH = "models/tomato_class_indices.json"
 
-def download_model_if_missing(filename, file_id):
-    """
-    Downloads file from Google Drive if not already in the root directory.
-    """
-    local_path = filename  # save directly in project root
-    if not os.path.exists(local_path):
-        print(f"Downloading {filename} from Google Drive...")
-        url = f"https://drive.google.com/uc?id={file_id}"
-        try:
-            gdown.download(url, output=local_path, quiet=False)
-        except Exception as e:
-            print(f"Failed to download {filename}: {e}")
-    return local_path
-
-# Download all files if missing
-for filename, file_id in DRIVE_FILES.items():
-    download_model_if_missing(filename, file_id)
-
-# Example paths to load models
-CHILI_MODEL_PATH = "chili_disease_model.h5"
-CHILI_CLASS_INDICES_PATH = "chili_class_indices.json"
-TOMATO_MODEL_PATH = "tomato_disease_model.h5"
-TOMATO_CLASS_INDICES_PATH = "tomato_class_indices.json"
-
-# Load models and class indices at app startup
+# Load models and class indices
 models = {}
 class_names = {}
 
@@ -69,7 +42,7 @@ def load_model_and_classes(name):
     inv_class_idx = {int(v): k for k, v in class_idx.items()}
     return model, inv_class_idx
 
-# Initialize models
+# Initialize models at startup
 models['chili'], class_names['chili'] = load_model_and_classes('chili')
 models['tomato'], class_names['tomato'] = load_model_and_classes('tomato')
 
@@ -90,7 +63,7 @@ def model_predict(filepath, plant_type):
     predicted_class = class_names[plant_type].get(class_idx, None)
     return predicted_class, confidence
 
-# Disease solution dictionary
+# Disease solutions
 solution_dict = {
     'chili': {
         "Bacterial-spot": "Use disease-free seeds, copper sprays, and avoid overhead irrigation.",
@@ -148,7 +121,6 @@ def index():
                                solution=solution,
                                image_url=url_for('static', filename=f'uploads/{filename}'))
 
-    # GET request
     return render_template('index.html', prediction=None, plant=None, solution=None, image_url=None)
 
 if __name__ == '__main__':
