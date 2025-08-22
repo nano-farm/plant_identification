@@ -2,7 +2,7 @@ import os
 import uuid
 import json
 import gdown
-from flask import Flask, request, render_template, jsonify, url_for
+from flask import Flask, request, render_template, url_for
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 import numpy as np
@@ -22,12 +22,21 @@ DRIVE_FILES = {
 # Ensure local models/ directory exists
 os.makedirs("models", exist_ok=True)
 
-# Download missing model/class index files automatically
-for filename, file_id in DRIVE_FILES.items():
+# Function to download files safely
+def download_model_if_missing(filename, file_id):
     local_path = os.path.join("models", filename)
     if not os.path.exists(local_path):
         print(f"Downloading {filename} from Google Drive...")
-        gdown.download(id=file_id, output=local_path, quiet=False)
+        url = f"https://drive.google.com/uc?id={file_id}"
+        try:
+            gdown.download(url, output=local_path, quiet=False)
+        except Exception as e:
+            print(f"Failed to download {filename}: {e}")
+    return local_path
+
+# Download all required files
+for filename, file_id in DRIVE_FILES.items():
+    download_model_if_missing(filename, file_id)
 
 # Paths for chili
 CHILI_MODEL_PATH = 'models/chili_disease_model.h5'
