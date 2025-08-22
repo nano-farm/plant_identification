@@ -6,11 +6,12 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 import numpy as np
 
+# Initialize Flask app
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Paths to your committed models
+# Paths to models (update if you resaved them)
 CHILI_MODEL_PATH = "models/chili_disease_model.h5"
 CHILI_CLASS_INDICES_PATH = "models/chili_class_indices.json"
 TOMATO_MODEL_PATH = "models/tomato_disease_model.h5"
@@ -21,7 +22,7 @@ models = {}
 class_names = {}
 
 def load_model_and_classes(name):
-    """Load model and corresponding class indices."""
+    """Load model and class indices safely."""
     if name == 'chili':
         model_path, class_path = CHILI_MODEL_PATH, CHILI_CLASS_INDICES_PATH
     elif name == 'tomato':
@@ -34,20 +35,20 @@ def load_model_and_classes(name):
     if not os.path.exists(class_path):
         raise FileNotFoundError(f"Class indices file not found: {class_path}")
 
-    model = load_model(model_path)
+    model = load_model(model_path, compile=False)  # Avoid compilation issues
     with open(class_path, 'r') as f:
         class_idx = json.load(f)
 
-    # Convert to {int: class_name}
+    # Convert {class_name: idx} to {idx: class_name}
     inv_class_idx = {int(v): k for k, v in class_idx.items()}
     return model, inv_class_idx
 
-# Initialize models at startup
+# Initialize at startup
 models['chili'], class_names['chili'] = load_model_and_classes('chili')
 models['tomato'], class_names['tomato'] = load_model_and_classes('tomato')
 
 def prepare_image(img_path, target_size=(224, 224)):
-    """Load and preprocess image for prediction."""
+    """Preprocess uploaded image for prediction."""
     img = image.load_img(img_path, target_size=target_size)
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
@@ -123,5 +124,7 @@ def index():
 
     return render_template('index.html', prediction=None, plant=None, solution=None, image_url=None)
 
+# Bind to Render's port
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
