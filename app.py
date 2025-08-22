@@ -27,7 +27,7 @@ for filename, file_id in DRIVE_FILES.items():
     local_path = os.path.join("models", filename)
     if not os.path.exists(local_path):
         print(f"Downloading {filename} from Google Drive...")
-        gdown.download(f"https://drive.google.com/uc?id={file_id}", local_path, quiet=False)
+        gdown.download(id=file_id, output=local_path, quiet=False)
 
 # Paths for chili
 CHILI_MODEL_PATH = 'models/chili_disease_model.h5'
