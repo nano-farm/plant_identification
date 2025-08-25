@@ -85,6 +85,28 @@
             margin-top: 10px;
             font-size: 14px;
             color: #666;
+            min-height: 20px; /* Prevents layout shift */
+        }
+        /* --- NEW STYLES --- */
+        .image-preview {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            display: none; /* Hidden by default */
+        }
+        .loader {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #4caf50; /* Green */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            margin: 30px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -93,7 +115,6 @@
     <p>Select your plant type and upload a leaf image to identify possible diseases and get care suggestions.</p>
 
     <div class="upload-section">
-        <!-- Chili Form -->
         <div class="plant-option">
             <h3 class="plant-title">Chili Plant</h3>
             <form method="POST" action="/" enctype="multipart/form-data" id="chiliForm">
@@ -101,11 +122,11 @@
                 <label for="chiliFile" class="file-label">Choose Chili Leaf Image</label>
                 <input type="file" id="chiliFile" name="file" accept="image/*" required>
                 <div class="selected-file" id="chiliFileName">No file selected</div>
+                <img id="chili-preview" class="image-preview" src="#" alt="Image Preview"/>
                 <button type="submit">Analyze Chili Leaf</button>
             </form>
         </div>
 
-        <!-- Tomato Form -->
         <div class="plant-option">
             <h3 class="plant-title tomato">Tomato Plant</h3>
             <form method="POST" action="/" enctype="multipart/form-data" id="tomatoForm">
@@ -113,10 +134,13 @@
                 <label for="tomatoFile" class="file-label">Choose Tomato Leaf Image</label>
                 <input type="file" id="tomatoFile" name="file" accept="image/*" required>
                 <div class="selected-file" id="tomatoFileName">No file selected</div>
+                <img id="tomato-preview" class="image-preview" src="#" alt="Image Preview"/>
                 <button type="submit">Analyze Tomato Leaf</button>
             </form>
         </div>
     </div>
+
+    <div id="loader" class="loader" style="display: none;"></div>
 
     {% if prediction %}
         <div class="result">
@@ -131,17 +155,54 @@
     {% endif %}
 
     <script>
-        // Show selected file name for chili
-        document.getElementById('chiliFile').addEventListener('change', function(e) {
-            const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
-            document.getElementById('chiliFileName').textContent = fileName;
-        });
+        // --- REFACTORED AND IMPROVED JAVASCRIPT ---
 
-        // Show selected file name for tomato
-        document.getElementById('tomatoFile').addEventListener('change', function(e) {
-            const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
-            document.getElementById('tomatoFileName').textContent = fileName;
-        });
+        // A single, reusable function for handling file selection and preview
+        function setupFileUpload(fileInputId, fileNameId, previewId) {
+            const fileInput = document.getElementById(fileInputId);
+            const fileNameDisplay = document.getElementById(fileNameId);
+            const previewImage = document.getElementById(previewId);
+
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Display the file name
+                    fileNameDisplay.textContent = file.name;
+                    
+                    // Use FileReader to show the image preview
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        previewImage.src = event.target.result;
+                        previewImage.style.display = 'block'; // Show the preview
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    fileNameDisplay.textContent = 'No file selected';
+                    previewImage.src = '#'; // Reset src
+                    previewImage.style.display = 'none'; // Hide the preview
+                }
+            });
+        }
+
+        // Set up both forms using the reusable function
+        setupFileUpload('chiliFile', 'chiliFileName', 'chili-preview');
+        setupFileUpload('tomatoFile', 'tomatoFileName', 'tomato-preview');
+
+        // Function to show the loader when a form is submitted
+        function handleFormSubmit(formId) {
+            document.getElementById(formId).addEventListener('submit', function() {
+                // Hide any existing result from a previous prediction
+                const resultDiv = document.querySelector('.result');
+                if(resultDiv) {
+                    resultDiv.style.display = 'none';
+                }
+                // Show the loader
+                document.getElementById('loader').style.display = 'block';
+            });
+        }
+
+        handleFormSubmit('chiliForm');
+        handleFormSubmit('tomatoForm');
     </script>
 </body>
 </html>
