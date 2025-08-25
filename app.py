@@ -11,46 +11,43 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# --- MODIFIED SECTION STARTS HERE ---
+
 # Paths for Keras 3 .keras models
-CHILI_MODEL_PATH = 'models/chili_disease_model.keras'
-CHILI_CLASS_INDICES_PATH = 'models/chili_class_indices.json'
+MODEL_PATHS = {
+    'chili': 'models/chili_disease_model.keras',
+    'tomato': 'models/tomato_disease_model.keras'
+}
+CLASS_INDICES_PATHS = {
+    'chili': 'models/chili_class_indices.json',
+    'tomato': 'models/tomato_class_indices.json'
+}
 
-TOMATO_MODEL_PATH = 'models/tomato_disease_model.keras'
-TOMATO_CLASS_INDICES_PATH = 'models/tomato_class_indices.json'
-
-# Dictionaries to hold models and class names
+# Dictionaries to hold models and class names once they are loaded
 models = {}
 class_names = {}
 
-def load_model_and_classes(name):
-    """Load Keras 3 model and class indices safely."""
-    if name == 'chili':
-        model_path, class_path = CHILI_MODEL_PATH, CHILI_CLASS_INDICES_PATH
-    elif name == 'tomato':
-        model_path, class_path = TOMATO_MODEL_PATH, TOMATO_CLASS_INDICES_PATH
-    else:
-        raise ValueError("Unsupported plant type")
-
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model path not found: {model_path}")
-    if not os.path.exists(class_path):
-        raise FileNotFoundError(f"Class indices file not found: {class_path}")
-
-    try:
-        model = load_model(model_path, compile=False)
-    except Exception as e:
-        raise RuntimeError(f"Failed to load {name} model: {e}")
-
-    with open(class_path, 'r') as f:
-        class_idx = json.load(f)
-
-    # Convert {class_name: idx} -> {idx: class_name}
-    inv_class_idx = {int(v): k for k, v in class_idx.items()}
-    return model, inv_class_idx
-
-# Load models at startup
-models['chili'], class_names['chili'] = load_model_and_classes('chili')
-models['tomato'], class_names['tomato'] = load_model_and_classes('tomato')
+def get_model(plant_type):
+    """
+    Loads a model and its class names if they haven't been loaded yet.
+    This is "lazy loading" - it only uses memory when a specific model is needed.
+    """
+    if plant_type not in models:
+        print(f"Loading model for {plant_type}...")
+        # Load the model
+        model_path = MODEL_PATHS[plant_type]
+        models[plant_type] = load_model(model_path, compile=False)
+        
+        # Load the class names
+        class_path = CLASS_INDICES_PATHS[plant_type]
+        with open(class_path, 'r') as f:
+            class_idx = json.load(f)
+        
+        # Invert the class index dictionary
+        class_names[plant_type] = {int(v): k for k, v in class_idx.items()}
+        print(f"Model for {plant_type} loaded successfully.")
+    
+    return models[plant_type], class_names[plant_type]
 
 def prepare_image(img_path, target_size=(224, 224)):
     """Preprocess uploaded image for prediction."""
@@ -62,14 +59,21 @@ def prepare_image(img_path, target_size=(224, 224)):
 
 def model_predict(filepath, plant_type):
     """Run model prediction and return class + confidence."""
+    # Get the model and class names, loading them if necessary
+    model, current_class_names = get_model(plant_type)
+    
     img = prepare_image(filepath)
-    preds = models[plant_type].predict(img)
+    preds = model.predict(img)
+    
     class_idx = np.argmax(preds, axis=1)[0]
     confidence = float(np.max(preds))
-    predicted_class = class_names[plant_type].get(class_idx, None)
+    predicted_class = current_class_names.get(class_idx, "Unknown")
     return predicted_class, confidence
 
-# Disease solutions
+# --- MODIFIED SECTION ENDS HERE ---
+
+
+# Disease solutions (Your existing dictionary goes here)
 solution_dict = {
     'chili': {
         "Bacterial-spot": "Use disease-free seeds, copper sprays, and avoid overhead irrigation.",
@@ -93,6 +97,7 @@ solution_dict = {
         "Tomato_Spider_mites_Two_spotted_spider_mite": "Use miticides and encourage beneficial predatory insects."
     }
 }
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -129,7 +134,7 @@ def index():
 
     return render_template('index.html', prediction=None, plant=None, solution=None, image_url=None)
 
-# Bind to Render's port
+# You don't need the __main__ block for Render with Gunicorn
+# But it's good to keep for local testing
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
