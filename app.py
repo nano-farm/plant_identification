@@ -11,8 +11,6 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# --- MODIFIED SECTION STARTS HERE ---
-
 # Paths for Keras 3 .keras models
 MODEL_PATHS = {
     'chili': 'models/chili_disease_model.keras',
@@ -70,10 +68,7 @@ def model_predict(filepath, plant_type):
     predicted_class = current_class_names.get(class_idx, "Unknown")
     return predicted_class, confidence
 
-# --- MODIFIED SECTION ENDS HERE ---
-
-
-# Disease solutions (Your existing dictionary goes here)
+# Disease solutions
 solution_dict = {
     'chili': {
         "Bacterial-spot": "Use disease-free seeds, copper sprays, and avoid overhead irrigation.",
@@ -120,11 +115,23 @@ def index():
             if not predicted_class:
                 raise ValueError("Prediction class not found in class names")
 
-            solution = solution_dict.get(plant_type, {}).get(predicted_class, "No solution found.")
-            prediction_text = f"{predicted_class.replace('_', ' ')} ({confidence*100:.1f}% confidence)" if confidence > 0.1 else f"Uncertain: {predicted_class.replace('_', ' ')}"
+            # --- NEW: CONFIDENCE THRESHOLD LOGIC ---
+            CONFIDENCE_THRESHOLD = 0.70  # 70%
+
+            if confidence >= CONFIDENCE_THRESHOLD:
+                prediction_text = f"{predicted_class.replace('_', ' ')} ({confidence*100:.1f}% confidence)"
+                solution = solution_dict.get(plant_type, {}).get(predicted_class, "No solution found.")
+            else:
+                prediction_text = f"Uncertain Diagnosis ({confidence*100:.1f}% confidence)"
+                solution = "The model is not confident enough to make a diagnosis. Please try a clearer image taken in good, natural light."
+            # --- END OF NEW LOGIC ---
 
         except Exception as e:
-            return render_template('index.html', prediction=f"Error: {e}", plant=None, solution=None, image_url=None)
+            # It's better to log the actual error for debugging
+            print(f"An error occurred: {e}")
+            prediction_text = "An error occurred during prediction."
+            solution = "Please try again with a different image."
+
 
         return render_template('index.html',
                                prediction=prediction_text,
@@ -134,7 +141,6 @@ def index():
 
     return render_template('index.html', prediction=None, plant=None, solution=None, image_url=None)
 
-# You don't need the __main__ block for Render with Gunicorn
-# But it's good to keep for local testing
+# For local testing
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
