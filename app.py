@@ -11,10 +11,10 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Paths for Keras 3 .keras models
+# Paths for Keras models
 MODEL_PATHS = {
     'chili': 'models/chili_disease_model.keras',
-    'tomato': 'models/tomato_disease_model.keras'
+    'tomato': 'models/tomato_disease_model_oversampled.keras'
 }
 CLASS_INDICES_PATHS = {
     'chili': 'models/chili_class_indices.json',
@@ -28,25 +28,22 @@ class_names = {}
 def get_model(plant_type):
     """
     Loads a model and its class names if they haven't been loaded yet.
-    This is "lazy loading" - it only uses memory when a specific model is needed.
     """
     if plant_type not in models:
         print(f"Loading model for {plant_type}...")
-        # Load the model
         model_path = MODEL_PATHS[plant_type]
         models[plant_type] = load_model(model_path, compile=False)
         
-        # Load the class names
         class_path = CLASS_INDICES_PATHS[plant_type]
         with open(class_path, 'r') as f:
             class_idx = json.load(f)
         
-        # Invert the class index dictionary
         class_names[plant_type] = {int(v): k for k, v in class_idx.items()}
         print(f"Model for {plant_type} loaded successfully.")
     
     return models[plant_type], class_names[plant_type]
 
+# FIXED: Updated target_size to match the 224x224 training dimensions
 def prepare_image(img_path, target_size=(224, 224)):
     """Preprocess uploaded image for prediction."""
     img = image.load_img(img_path, target_size=target_size)
@@ -57,7 +54,6 @@ def prepare_image(img_path, target_size=(224, 224)):
 
 def model_predict(filepath, plant_type):
     """Run model prediction and return class + confidence."""
-    # Get the model and class names, loading them if necessary
     model, current_class_names = get_model(plant_type)
     
     img = prepare_image(filepath)
@@ -80,16 +76,16 @@ solution_dict = {
         "White-spot": "Remove affected leaves and apply appropriate fungicides."
     },
     'tomato': {
-        "Tomato__Target_Spot": "Remove infected leaves, apply fungicides, and rotate crops to prevent spread.",
-        "Tomato__Tomato_mosaic_virus": "Remove and destroy infected plants, disinfect tools, and use virus-resistant varieties.",
-        "Tomato__Tomato_YellowLeaf__Curl_Virus": "Control whitefly vectors, remove infected plants, and use resistant varieties.",
-        "Tomato_Bacterial_spot": "Use copper-based bactericides and avoid overhead irrigation.",
-        "Tomato_Early_blight": "Remove infected leaves, apply fungicides, and rotate crops.",
-        "Tomato_healthy": "No action needed. Keep monitoring for signs of disease.",
-        "Tomato_Late_blight": "Remove infected plants and apply preventive fungicides.",
-        "Tomato_Leaf_Mold": "Increase air circulation, avoid overhead watering, and use fungicides.",
-        "Tomato_Septoria_leaf_spot": "Remove infected leaves and use fungicides.",
-        "Tomato_Spider_mites_Two_spotted_spider_mite": "Use miticides and encourage beneficial predatory insects."
+        "Tomato___Target_Spot": "Remove infected leaves, apply fungicides, and rotate crops to prevent spread.",
+        "Tomato___Tomato_mosaic_virus": "Remove and destroy infected plants, disinfect tools, and use virus-resistant varieties.",
+        "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Control whitefly vectors, remove infected plants, and use resistant varieties.",
+        "Tomato___Bacterial_spot": "Use copper-based bactericides and avoid overhead irrigation.",
+        "Tomato___Early_blight": "Remove infected leaves, apply fungicides, and rotate crops.",
+        "Tomato___healthy": "No action needed. Keep monitoring for signs of disease.",
+        "Tomato___Late_blight": "Remove infected plants and apply preventive fungicides.",
+        "Tomato___Leaf_Mold": "Increase air circulation, avoid overhead watering, and use fungicides.",
+        "Tomato___Septoria_leaf_spot": "Remove infected leaves and use fungicides.",
+        "Tomato___Spider_mites Two-spotted_spider_mite": "Use miticides and encourage beneficial predatory insects."
     }
 }
 
@@ -105,18 +101,14 @@ def index():
         if not file or file.filename == '':
             return render_template('index.html', prediction="No file uploaded", plant=None, solution=None, image_url=None)
 
-        # Save uploaded file with unique name
         filename = f"{uuid.uuid4().hex}_{file.filename}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
         try:
             predicted_class, confidence = model_predict(filepath, plant_type)
-            if not predicted_class:
-                raise ValueError("Prediction class not found in class names")
-
-            # --- NEW: CONFIDENCE THRESHOLD LOGIC ---
-            CONFIDENCE_THRESHOLD = 0.70  # 70%
+            
+            CONFIDENCE_THRESHOLD = 0.70
 
             if confidence >= CONFIDENCE_THRESHOLD:
                 prediction_text = f"{predicted_class.replace('_', ' ')} ({confidence*100:.1f}% confidence)"
@@ -124,10 +116,8 @@ def index():
             else:
                 prediction_text = f"Uncertain Diagnosis ({confidence*100:.1f}% confidence)"
                 solution = "The model is not confident enough to make a diagnosis. Please try a clearer image taken in good, natural light."
-            # --- END OF NEW LOGIC ---
 
         except Exception as e:
-            # It's better to log the actual error for debugging
             print(f"An error occurred: {e}")
             prediction_text = "An error occurred during prediction."
             solution = "Please try again with a different image."
@@ -144,3 +134,4 @@ def index():
 # For local testing
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
