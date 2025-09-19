@@ -13,7 +13,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Paths for Keras models
 MODEL_PATHS = {
-    'chili': 'models/chili_disease_model.keras',
+    'chili': 'models/chili_disease_model_oversampled.keras',
     'tomato': 'models/tomato_disease_model_oversampled.keras'
 }
 CLASS_INDICES_PATHS = {
