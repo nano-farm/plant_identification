@@ -3,138 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plant Leaf Disease Classifier</title>
+    <title>Nano Farm - Plant Disease Classifier</title>
     <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for a cleaner typography -->
+    <!-- Google Fonts for a professional look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            /* A subtle leaf pattern background for visual texture */
-            background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
-            background-color: #e5e7eb; /* Fallback color */
-            background-attachment: fixed;
+        }
+        /* A semi-transparent overlay to ensure text is always readable */
+        .body-overlay {
+            /* This is no longer needed with a gradient, but kept in case you revert */
         }
         /* Frosted glass / glassmorphism effect for content cards */
         .glass-card {
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         /* Custom animation for the loader */
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
         .loader {
             animation: spin 1s linear infinite;
         }
     </style>
 </head>
-<body class="text-gray-800 antialiased">
+<body class="antialiased bg-gradient-to-br from-green-100 via-teal-100 to-lime-200">
+    <div class="min-h-screen">
+        <div class="container mx-auto px-4 py-12 md:py-16">
+            <!-- Header Section with Logo -->
+            <header class="text-center mb-12">
+                <img src="https://raw.githubusercontent.com/nano-farm/plant_identification/0b4f393186dee6980b737edc25b1fb692f7a5b53/static/images/nano_form_logo.jpg" alt="Nano Form Logo" class="w-28 h-28 md:w-32 md:h-32 mx-auto mb-4 rounded-full shadow-lg border-4 border-white">
+                <h1 class="text-4xl md:text-5xl font-bold text-green-800" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.1);">Plant Disease Classifier</h1>
+                <p class="mt-4 text-lg text-gray-700 max-w-2xl mx-auto">
+                    Select a plant, upload a leaf image, and get an instant AI-powered diagnosis and care solution.
+                </p>
+            </header>
 
-    <div class="container mx-auto px-4 py-12 md:py-20">
-        <!-- Header Section with Logo -->
-        <header class="text-center mb-12">
-            <!-- UPDATED: The placeholder has been replaced with the correct, raw GitHub URL for your logo -->
-            <img src="https://raw.githubusercontent.com/nano-farm/plant_identification/0b4f393186dee6980b737edc25b1fb692f7a5b53/static/images/nano_form_logo.jpg" alt="Nano Form Logo" class="w-24 h-24 md:w-32 md:h-32 mx-auto mb-4 rounded-full shadow-lg border-4 border-white">
-            <h1 class="text-4xl md:text-5xl font-bold text-green-800" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.1);">Plant Disease Classifier</h1>
-            <p class="mt-4 text-lg text-gray-700 max-w-2xl mx-auto">
-                Select your plant type and upload a leaf image to identify possible diseases and get care suggestions.
-            </p>
-        </header>
+            <!-- Main Upload Section -->
+            <main class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                
+                <!-- Chili Plant Card -->
+                <div class="glass-card rounded-2xl shadow-lg p-6 md:p-8 transition-all duration-300 hover:shadow-xl hover:scale-105">
+                    <h3 class="text-2xl font-bold text-red-700 mb-4 text-center">Chili Plant</h3>
+                    <form method="POST" action="/" enctype="multipart/form-data" id="chiliForm">
+                        <input type="hidden" name="plant_type" value="chili">
+                        <img id="chili-preview" class="w-full h-56 object-cover rounded-lg mb-4 border-2 border-white/50 shadow-md hidden" src="#" alt="Chili image preview"/>
+                        <div id="chili-placeholder" class="w-full h-56 flex items-center justify-center rounded-lg mb-4 bg-black/5 border border-dashed border-gray-400">
+                            <span class="text-gray-600 font-medium">Image Preview</span>
+                        </div>
+                        <label for="chiliFile" class="w-full inline-block text-center py-3 px-5 bg-green-600 text-white font-semibold rounded-lg cursor-pointer hover:bg-green-700 transition-all shadow-md">
+                            Choose Chili Leaf Image
+                        </label>
+                        <input type="file" id="chiliFile" name="file" accept="image/*" class="hidden" required>
+                        <div class="text-sm text-gray-600 mt-2 text-center h-5" id="chiliFileName">No file selected</div>
+                        <button type="submit" class="w-full mt-4 py-3 px-5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all shadow-md hover:shadow-lg">
+                            Analyze Chili Leaf
+                        </button>
+                    </form>
+                </div>
 
-        <!-- Main Upload Section -->
-        <main class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Tomato Plant Card (MODIFIED) -->
+                <div class="glass-card rounded-2xl shadow-lg p-6 md:p-8 transition-all duration-300 hover:shadow-xl hover:scale-105">
+                    <h3 class="text-2xl font-bold text-red-700 mb-4 text-center">Tomato Plant</h3>
+                    <form method="POST" action="/" enctype="multipart/form-data" id="tomatoForm">
+                        <input type="hidden" name="plant_type" value="tomato">
+                        <img id="tomato-preview" class="w-full h-56 object-cover rounded-lg mb-4 border-2 border-white/50 shadow-md hidden" src="#" alt="Tomato image preview"/>
+                         <div id="tomato-placeholder" class="w-full h-56 flex items-center justify-center rounded-lg mb-4 bg-black/5 border border-dashed border-gray-400">
+                            <span class="text-gray-600 font-medium">Image Preview</span>
+                        </div>
+                        <label for="tomatoFile" class="w-full inline-block text-center py-3 px-5 bg-green-600 text-white font-semibold rounded-lg cursor-pointer hover:bg-green-700 transition-all shadow-md">
+                            Choose Tomato Leaf Image
+                        </label>
+                        <input type="file" id="tomatoFile" name="file" accept="image/*" class="hidden" required>
+                        <div class="text-sm text-gray-600 mt-2 text-center h-5" id="tomatoFileName">No file selected</div>
+                        <button type="submit" class="w-full mt-4 py-3 px-5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all shadow-md hover:shadow-lg">
+                            Analyze Tomato Leaf
+                        </button>
+                    </form>
+                </div>
+            </main>
             
-            <!-- Chili Plant Card -->
-            <div class="glass-card rounded-2xl shadow-lg p-6 md:p-8 transition-transform transform hover:scale-105">
-                <h3 class="text-2xl font-bold text-red-700 mb-4 text-center">Chili Plant</h3>
-                <form method="POST" action="/" enctype="multipart/form-data" id="chiliForm">
-                    <input type="hidden" name="plant_type" value="chili">
-                    <img id="chili-preview" class="w-full h-56 object-cover rounded-lg mb-4 border-2 border-white/50 shadow-md hidden" src="#" alt="Chili image preview"/>
-                    <div id="chili-placeholder" class="w-full h-56 flex items-center justify-center rounded-lg mb-4 bg-black/10 border border-dashed border-gray-400">
-                        <span class="text-gray-600 font-medium">Image Preview</span>
-                    </div>
-                    <label for="chiliFile" class="w-full inline-block text-center py-3 px-5 bg-green-600 text-white font-semibold rounded-lg cursor-pointer hover:bg-green-700 transition-all">
-                        Choose Chili Leaf Image
-                    </label>
-                    <input type="file" id="chiliFile" name="file" accept="image/*" class="hidden" required>
-                    <div class="text-sm text-gray-600 mt-2 text-center h-5" id="chiliFileName">No file selected</div>
-                    <button type="submit" class="w-full mt-4 py-3 px-5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all shadow-md hover:shadow-lg">
-                        Analyze Chili Leaf
-                    </button>
-                </form>
-            </div>
-
-            <!-- Tomato Plant Card -->
-            <div class="glass-card rounded-2xl shadow-lg p-6 md:p-8 transition-transform transform hover:scale-105">
-                <h3 class="text-2xl font-bold text-pink-700 mb-4 text-center">Tomato Plant</h3>
-                <form method="POST" action="/" enctype="multipart/form-data" id="tomatoForm">
-                    <input type="hidden" name="plant_type" value="tomato">
-                    <img id="tomato-preview" class="w-full h-56 object-cover rounded-lg mb-4 border-2 border-white/50 shadow-md hidden" src="#" alt="Tomato image preview"/>
-                     <div id="tomato-placeholder" class="w-full h-56 flex items-center justify-center rounded-lg mb-4 bg-black/10 border border-dashed border-gray-400">
-                        <span class="text-gray-600 font-medium">Image Preview</span>
-                    </div>
-                    <label for="tomatoFile" class="w-full inline-block text-center py-3 px-5 bg-green-600 text-white font-semibold rounded-lg cursor-pointer hover:bg-green-700 transition-all">
-                        Choose Tomato Leaf Image
-                    </label>
-                    <input type="file" id="tomatoFile" name="file" accept="image/*" class="hidden" required>
-                    <div class="text-sm text-gray-600 mt-2 text-center h-5" id="tomatoFileName">No file selected</div>
-                    <button type="submit" class="w-full mt-4 py-3 px-5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all shadow-md hover:shadow-lg">
-                        Analyze Tomato Leaf
-                    </button>
-                </form>
-            </div>
-        </main>
-        
-        <!-- Loading Spinner -->
-        <div id="loader" class="w-16 h-16 border-8 border-dashed rounded-full border-green-700 border-t-transparent loader mx-auto mt-10" style="display: none;"></div>
-        
-        <!-- Results Section -->
-        {% if prediction %}
-        <section id="result-section" class="mt-12 max-w-3xl mx-auto">
-            <div class="glass-card rounded-2xl shadow-xl p-8">
-                <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Analysis Result</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    {% if image_url %}
-                    <div class="w-full">
-                        <h4 class="font-semibold text-lg mb-2 text-gray-700">Your Image:</h4>
-                        <img src="{{ image_url }}" alt="Uploaded Leaf" class="rounded-lg w-full object-cover shadow-md border-2 border-white/50">
-                    </div>
-                    {% endif %}
-                    <div class="space-y-4">
-                        <div>
-                            <h4 class="font-semibold text-lg text-gray-700 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H5a2 2 0 00-2 2zm0 0h18" /></svg>
-                                Plant Type
-                            </h4>
-                            <p class="text-xl text-gray-900">{{ plant }}</p>
+            <!-- Loading Spinner -->
+            <div id="loader" class="w-16 h-16 border-8 border-dashed rounded-full border-green-700 border-t-transparent loader mx-auto mt-10" style="display: none;"></div>
+            
+            <!-- Results Section -->
+            {% if prediction %}
+            <section id="result-section" class="mt-12 max-w-3xl mx-auto">
+                <div class="glass-card rounded-2xl shadow-xl p-8">
+                    <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Analysis Result</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                        {% if image_url %}
+                        <div class="w-full">
+                            <h4 class="font-semibold text-lg mb-2 text-gray-700">Your Image:</h4>
+                            <img src="{{ image_url }}" alt="Uploaded Leaf" class="rounded-lg w-full object-cover shadow-md border-2 border-white/50">
                         </div>
-                        <div>
-                            <h4 class="font-semibold text-lg text-gray-700 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Diagnosis
-                            </h4>
-                            <p class="text-xl font-bold text-gray-900">{{ prediction }}</p>
-                        </div>
-                        <div>
-                             <h4 class="font-semibold text-lg text-gray-700 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-                                Suggested Solution
-                            </h4>
-                            <p class="text-gray-700 bg-gray-50/50 p-4 rounded-lg border border-white/30">{{ solution }}</p>
+                        {% endif %}
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-lg text-gray-700 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H5a2 2 0 00-2 2zm0 0h18" /></svg>
+                                    Plant Type
+                                </h4>
+                                <p class="text-xl text-gray-900">{{ plant }}</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg text-gray-700 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    Diagnosis
+                                </h4>
+                                <p class="text-xl font-bold text-gray-900">{{ prediction }}</p>
+                            </div>
+                            <div>
+                                 <h4 class="font-semibold text-lg text-gray-700 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                                    Suggested Solution
+                                </h4>
+                                <p class="text-gray-700 bg-gray-50/50 p-4 rounded-lg border border-white/30">{{ solution }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
-        {% endif %}
+            </section>
+            {% endif %}
+        </div>
     </div>
 
     <script>
@@ -182,4 +180,3 @@
     </script>
 </body>
 </html>
-

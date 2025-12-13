@@ -15,7 +15,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 MODEL_PATHS = {
     'chili': 'models/chili_disease_model_oversampled.keras',
     'tomato': 'models/tomato_disease_model_oversampled.keras'
-}
+}   
 CLASS_INDICES_PATHS = {
     'chili': 'models/chili_class_indices.json',
     'tomato': 'models/tomato_class_indices.json'
@@ -66,27 +66,27 @@ def model_predict(filepath, plant_type):
 
 # Disease solutions
 solution_dict = {
-    'chili': {
-        "Bacterial-spot": "Use disease-free seeds, copper sprays, and avoid overhead irrigation.",
-        "Cercospora-leaf-spot": "Apply fungicides, remove infected leaves, and improve plant spacing.",
-        "curl-virus": "Control aphids and whiteflies, remove infected plants.",
-        "Healthy-Leaf": "No action needed. Maintain proper care.",
-        "Nutrition-deficiency": "Apply balanced fertilizers and improve soil health.",
-        "Unlabeled": "No diagnosis available. Upload a clearer image.",
-        "White-spot": "Remove affected leaves and apply appropriate fungicides."
-    },
-    'tomato': {
-        "Tomato___Target_Spot": "Remove infected leaves, apply fungicides, and rotate crops to prevent spread.",
-        "Tomato___Tomato_mosaic_virus": "Remove and destroy infected plants, disinfect tools, and use virus-resistant varieties.",
-        "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Control whitefly vectors, remove infected plants, and use resistant varieties.",
-        "Tomato___Bacterial_spot": "Use copper-based bactericides and avoid overhead irrigation.",
-        "Tomato___Early_blight": "Remove infected leaves, apply fungicides, and rotate crops.",
-        "Tomato___healthy": "No action needed. Keep monitoring for signs of disease.",
-        "Tomato___Late_blight": "Remove infected plants and apply preventive fungicides.",
-        "Tomato___Leaf_Mold": "Increase air circulation, avoid overhead watering, and use fungicides.",
-        "Tomato___Septoria_leaf_spot": "Remove infected leaves and use fungicides.",
-        "Tomato___Spider_mites Two-spotted_spider_mite": "Use miticides and encourage beneficial predatory insects."
-    }
+"chili": {
+    "Bacterial-spot": "Apply copper-based bactericides (like Copper Oxychloride) or a Copper-Mancozeb mixture. Avoid overhead irrigation to keep foliage dry, as bacteria spread in water drops. Remove infected debris and rotate crops to non-solanaceous plants.",
+    "Cercospora-leaf-spot": "Spray with Chlorothalonil or Mancozeb at the first sign of spots. Improve air circulation by spacing plants properly. Remove and destroy fallen leaves to reduce fungal spores.",
+    "curl-virus": "There is no cure for the virus itself; remove and burn infected plants immediately to prevent spread. Control whitefly vectors using yellow sticky traps, neem oil, or Imidacloprid sprays.",
+    "Healthy-Leaf": "Maintain a regular watering and fertilization schedule. Inspect plants weekly for early signs of pests or disease.",
+    "Nutrition-deficiency": "Apply a balanced NPK fertilizer. For specific symptoms (e.g., yellowing), use foliar sprays containing micronutrients like Magnesium, Calcium, or Iron. Check soil pH to ensure nutrient uptake.",
+    "Unlabeled": "Diagnosis unclear. Please upload a clearer image with the leaf flat and well-lit.",
+    "White-spot": "Likely fungal (e.g., Alternaria or Cercospora). Prune heavily affected leaves. Apply broad-spectrum fungicides like Mancozeb or Copper hydroxide. Avoid water accumulation on leaves."
+  },
+        "tomato": {
+            "Tomato___Target_Spot": "Apply fungicides like chlorothalonil or mancozeb at the first sign of symptoms. Improve air circulation by pruning lower leaves and staking plants to keep foliage off the ground. Avoid overhead irrigation to keep leaves dry.",
+            "Tomato___Tomato_mosaic_virus": "There is no cure; remove and destroy infected plants immediately to prevent spread. disinfect tools with a bleach solution (1:9 ratio) between plants. Plant resistant varieties labeled 'ToMV' or 'TMV' and control weeds that may harbor the virus.",
+            "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "Control whitefly populations using yellow sticky traps, insecticidal soaps, or neem oil, as they transmit the virus. Remove and destroy infected plants immediately. Use reflective mulches to repel whiteflies and plant resistant varieties.",
+            "Tomato___Bacterial_spot": "Apply copper-based bactericides mixed with mancozeb for better control. Avoid overhead watering and working in the garden when plants are wet. Rotate crops to non-solanaceous plants (avoid peppers and eggplants) for at least 2-3 years.",
+            "Tomato___Early_blight": "Apply bio-fungicides like Bacillus subtilis or chemical fungicides containing chlorothalonil or copper. Mulch around the base of plants to prevent soil spores from splashing onto leaves. Prune infected lower leaves and rotate crops every 2-3 years.",
+            "Tomato___healthy": "Maintain a regular watering schedule and inspect plants weekly for early signs of pests or disease. Ensure proper spacing for airflow and apply compost to boost plant immunity.",
+            "Tomato___Late_blight": "This is a fast-spreading, destructive disease; remove and bag infected plants immediately to stop spores from spreading. Apply preventative fungicides like chlorothalonil or copper if cool, wet weather is forecast. Avoid overhead irrigation.",
+            "Tomato___Leaf_Mold": "Maximize air circulation by spacing plants widely and pruning excessive foliage. Water only at the base of the plant to keep leaves dry. If severe, apply fungicides approved for leaf mold control.",
+            "Tomato___Septoria_leaf_spot": "Remove fallen leaves and debris from the garden area to reduce overwintering spores. Apply fungicides containing chlorothalonil or copper. Mulch the soil to stop spores from splashing up onto the lower leaves.",
+            "Tomato___Spider_mites Two-spotted_spider_mite": "Spray plants with a strong stream of water to dislodge mites. Apply insecticidal soap, neem oil, or horticultural oil to undersides of leaves. Introduce beneficial insects like ladybugs or predatory mites."
+        }
 }
 
 
