@@ -3,136 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nano Farm - Plant Disease Classifier</title>
-    <!-- Tailwind CSS for modern styling -->
+    <title>Nano Farm - AI Plant Pathologist</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for a professional look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f0fdf4;
+            overflow-x: hidden;
         }
-        /* A semi-transparent overlay to ensure text is always readable */
-        .body-overlay {
-            /* This is no longer needed with a gradient, but kept in case you revert */
+
+        /* Dynamic Background Blobs */
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.6;
+            animation: float 10s ease-in-out infinite;
         }
-        /* Frosted glass / glassmorphism effect for content cards */
+        .blob-1 { top: 0; left: 0; width: 500px; height: 500px; background: #bbf7d0; animation-delay: 0s; }
+        .blob-2 { bottom: 0; right: 0; width: 600px; height: 600px; background: #86efac; animation-delay: 2s; }
+        .blob-3 { top: 50%; left: 50%; width: 400px; height: 400px; background: #fef08a; transform: translate(-50%, -50%); animation-delay: 4s; }
+
+        @keyframes float {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        /* Premium Glass Card */
         .glass-card {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
         }
-        /* Custom animation for the loader */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        .upload-zone {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%2316653444' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            transition: all 0.3s ease;
         }
-        .loader {
-            animation: spin 1s linear infinite;
+        .upload-zone:hover {
+            background-color: rgba(22, 163, 74, 0.05);
+            transform: scale(1.01);
+        }
+
+        /* Loader Animation */
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loader-ring {
+            display: inline-block;
+            width: 64px;
+            height: 64px;
+        }
+        .loader-ring:after {
+            content: " ";
+            display: block;
+            width: 46px;
+            height: 46px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 5px solid #16a34a;
+            border-color: #16a34a transparent #16a34a transparent;
+            animation: spinner 1.2s linear infinite;
         }
     </style>
 </head>
-<body class="antialiased bg-gradient-to-br from-green-100 via-teal-100 to-lime-200">
-    <div class="min-h-screen">
-        <div class="container mx-auto px-4 py-12 md:py-16">
-            <!-- Header Section with Logo -->
-            <header class="text-center mb-12">
-                <img src="https://raw.githubusercontent.com/nano-farm/plant_identification/0b4f393186dee6980b737edc25b1fb692f7a5b53/static/images/nano_form_logo.jpg" alt="Nano Form Logo" class="w-28 h-28 md:w-32 md:h-32 mx-auto mb-4 rounded-full shadow-lg border-4 border-white">
-                <h1 class="text-4xl md:text-5xl font-bold text-green-800" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.1);">Plant Disease Classifier</h1>
-                <p class="mt-4 text-lg text-gray-700 max-w-2xl mx-auto">
-                    Select a plant, upload a leaf image, and get an instant AI-powered diagnosis and care solution.
-                </p>
-            </header>
+<body class="antialiased min-h-screen relative text-slate-800">
 
-            <!-- Main Upload Section -->
-            <main class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                
-                <!-- Chili Plant Card -->
-                <div class="glass-card rounded-2xl shadow-lg p-6 md:p-8 transition-all duration-300 hover:shadow-xl hover:scale-105">
-                    <h3 class="text-2xl font-bold text-red-700 mb-4 text-center">Chili Plant</h3>
-                    <form method="POST" action="/" enctype="multipart/form-data" id="chiliForm">
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="blob blob-1 rounded-full"></div>
+        <div class="blob blob-2 rounded-full"></div>
+        <div class="blob blob-3 rounded-full"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 md:py-12 relative z-10">
+
+        <header class="text-center mb-16 fade-in">
+            <div class="relative inline-block group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-green-600 to-lime-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <img src="https://raw.githubusercontent.com/nano-farm/plant_identification/0b4f393186dee6980b737edc25b1fb692f7a5b53/static/images/nano_form_logo.jpg" 
+                     alt="Nano Farm Logo" 
+                     class="relative w-28 h-28 mx-auto mb-6 rounded-full border-4 border-white shadow-xl object-cover transform transition duration-500 hover:rotate-3">
+            </div>
+            
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-3">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-green-700 via-emerald-600 to-lime-600">
+                    Nano Farm
+                </span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium">
+                AI-Powered Plant Pathologist. Instant disease detection and care solutions for your crops.
+            </p>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            
+            <div class="glass-card rounded-3xl p-1 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                <div class="bg-white/50 p-6 md:p-8 rounded-[20px] h-full flex flex-col">
+                    <div class="flex items-center justify-center space-x-3 mb-6">
+                        <span class="bg-red-100 text-red-700 p-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 5 4 9 9 9"/><path d="M12 2c0 5-4 9-9 9"/><path d="M11.5 14a6.5 6.5 0 0 0 10 3.5"/><path d="M4 14.5c.5-3 3-5.5 6-7"/><path d="M2.5 17.5c1-2 3.5-3 6.5-1.5"/></svg>
+                        </span>
+                        <h3 class="text-2xl font-bold text-slate-800">Chili Plant</h3>
+                    </div>
+
+                    <form method="POST" action="/" enctype="multipart/form-data" id="chiliForm" class="flex-1 flex flex-col">
                         <input type="hidden" name="plant_type" value="chili">
-                        <img id="chili-preview" class="w-full h-56 object-cover rounded-lg mb-4 border-2 border-white/50 shadow-md hidden" src="#" alt="Chili image preview"/>
-                        <div id="chili-placeholder" class="w-full h-56 flex items-center justify-center rounded-lg mb-4 bg-black/5 border border-dashed border-gray-400">
-                            <span class="text-gray-600 font-medium">Image Preview</span>
+                        
+                        <div class="flex-1 mb-6">
+                            <label for="chiliFile" class="cursor-pointer block h-full">
+                                <div id="chili-placeholder" class="upload-zone w-full h-64 rounded-2xl flex flex-col items-center justify-center text-center p-6 bg-slate-50/50">
+                                    <div class="bg-white p-4 rounded-full shadow-sm mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                        </svg>
+                                    </div>
+                                    <p class="text-sm font-semibold text-slate-700">Click to upload leaf image</p>
+                                    <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG</p>
+                                </div>
+                                <img id="chili-preview" class="w-full h-64 object-cover rounded-2xl shadow-md hidden border border-slate-200" src="#" alt="Preview"/>
+                            </label>
+                            <input type="file" id="chiliFile" name="file" accept="image/*" class="hidden" required>
+                            <div id="chiliFileName" class="text-xs text-center text-slate-400 mt-2 h-4 font-medium"></div>
                         </div>
-                        <label for="chiliFile" class="w-full inline-block text-center py-3 px-5 bg-green-600 text-white font-semibold rounded-lg cursor-pointer hover:bg-green-700 transition-all shadow-md">
-                            Choose Chili Leaf Image
-                        </label>
-                        <input type="file" id="chiliFile" name="file" accept="image/*" class="hidden" required>
-                        <div class="text-sm text-gray-600 mt-2 text-center h-5" id="chiliFileName">No file selected</div>
-                        <button type="submit" class="w-full mt-4 py-3 px-5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all shadow-md hover:shadow-lg">
-                            Analyze Chili Leaf
-                        </button>
-                    </form>
-                </div>
 
-                <!-- Tomato Plant Card (MODIFIED) -->
-                <div class="glass-card rounded-2xl shadow-lg p-6 md:p-8 transition-all duration-300 hover:shadow-xl hover:scale-105">
-                    <h3 class="text-2xl font-bold text-red-700 mb-4 text-center">Tomato Plant</h3>
-                    <form method="POST" action="/" enctype="multipart/form-data" id="tomatoForm">
-                        <input type="hidden" name="plant_type" value="tomato">
-                        <img id="tomato-preview" class="w-full h-56 object-cover rounded-lg mb-4 border-2 border-white/50 shadow-md hidden" src="#" alt="Tomato image preview"/>
-                         <div id="tomato-placeholder" class="w-full h-56 flex items-center justify-center rounded-lg mb-4 bg-black/5 border border-dashed border-gray-400">
-                            <span class="text-gray-600 font-medium">Image Preview</span>
-                        </div>
-                        <label for="tomatoFile" class="w-full inline-block text-center py-3 px-5 bg-green-600 text-white font-semibold rounded-lg cursor-pointer hover:bg-green-700 transition-all shadow-md">
-                            Choose Tomato Leaf Image
-                        </label>
-                        <input type="file" id="tomatoFile" name="file" accept="image/*" class="hidden" required>
-                        <div class="text-sm text-gray-600 mt-2 text-center h-5" id="tomatoFileName">No file selected</div>
-                        <button type="submit" class="w-full mt-4 py-3 px-5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all shadow-md hover:shadow-lg">
-                            Analyze Tomato Leaf
+                        <button type="submit" class="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-green-600/20 hover:shadow-green-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center space-x-2">
+                            <span>Analyze Chili</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
                         </button>
                     </form>
                 </div>
-            </main>
-            
-            <!-- Loading Spinner -->
-            <div id="loader" class="w-16 h-16 border-8 border-dashed rounded-full border-green-700 border-t-transparent loader mx-auto mt-10" style="display: none;"></div>
-            
-            <!-- Results Section -->
-            {% if prediction %}
-            <section id="result-section" class="mt-12 max-w-3xl mx-auto">
-                <div class="glass-card rounded-2xl shadow-xl p-8">
-                    <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Analysis Result</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            </div>
+
+            <div class="glass-card rounded-3xl p-1 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                <div class="bg-white/50 p-6 md:p-8 rounded-[20px] h-full flex flex-col">
+                    <div class="flex items-center justify-center space-x-3 mb-6">
+                        <span class="bg-orange-100 text-orange-700 p-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5z"/><path d="M12 10a9 9 0 0 0-9 9 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 9 9 0 0 0-9-9z"/><path d="M12 2v8"/></svg>
+                        </span>
+                        <h3 class="text-2xl font-bold text-slate-800">Tomato Plant</h3>
+                    </div>
+
+                    <form method="POST" action="/" enctype="multipart/form-data" id="tomatoForm" class="flex-1 flex flex-col">
+                        <input type="hidden" name="plant_type" value="tomato">
+                        
+                        <div class="flex-1 mb-6">
+                            <label for="tomatoFile" class="cursor-pointer block h-full">
+                                <div id="tomato-placeholder" class="upload-zone w-full h-64 rounded-2xl flex flex-col items-center justify-center text-center p-6 bg-slate-50/50">
+                                    <div class="bg-white p-4 rounded-full shadow-sm mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                        </svg>
+                                    </div>
+                                    <p class="text-sm font-semibold text-slate-700">Click to upload leaf image</p>
+                                    <p class="text-xs text-slate-500 mt-1">Supports JPG, PNG</p>
+                                </div>
+                                <img id="tomato-preview" class="w-full h-64 object-cover rounded-2xl shadow-md hidden border border-slate-200" src="#" alt="Preview"/>
+                            </label>
+                            <input type="file" id="tomatoFile" name="file" accept="image/*" class="hidden" required>
+                            <div id="tomatoFileName" class="text-xs text-center text-slate-400 mt-2 h-4 font-medium"></div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 px-6 bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold rounded-xl shadow-lg shadow-orange-600/20 hover:shadow-orange-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center space-x-2">
+                            <span>Analyze Tomato</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+        
+        <div id="loader" class="text-center mt-12 hidden">
+            <div class="loader-ring"></div>
+            <p class="text-green-800 font-semibold mt-4 animate-pulse">Analyzing leaf structure...</p>
+        </div>
+        
+        {% if prediction %}
+        <section id="result-section" class="mt-16 max-w-4xl mx-auto animate-fade-in-up">
+            <div class="glass-card rounded-3xl p-1 shadow-2xl">
+                <div class="bg-white/80 p-8 md:p-10 rounded-[20px]">
+                    <div class="flex items-center justify-center mb-8">
+                        <div class="h-1 w-20 bg-green-500 rounded-full"></div>
+                        <h2 class="text-3xl font-bold text-slate-800 mx-4">Analysis Report</h2>
+                        <div class="h-1 w-20 bg-green-500 rounded-full"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
                         {% if image_url %}
-                        <div class="w-full">
-                            <h4 class="font-semibold text-lg mb-2 text-gray-700">Your Image:</h4>
-                            <img src="{{ image_url }}" alt="Uploaded Leaf" class="rounded-lg w-full object-cover shadow-md border-2 border-white/50">
+                        <div class="md:col-span-5">
+                            <div class="relative group">
+                                <div class="absolute -inset-1 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-200"></div>
+                                <img src="{{ image_url }}" alt="Uploaded Leaf" class="relative rounded-xl w-full h-64 md:h-full object-cover shadow-lg border-2 border-white">
+                                <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-slate-700 shadow-sm">
+                                    Input Image
+                                </div>
+                            </div>
                         </div>
                         {% endif %}
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="font-semibold text-lg text-gray-700 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H5a2 2 0 00-2 2zm0 0h18" /></svg>
-                                    Plant Type
-                                </h4>
-                                <p class="text-xl text-gray-900">{{ plant }}</p>
+
+                        <div class="md:col-span-7 space-y-6">
+                            <div class="flex items-start">
+                                <div class="bg-green-100 p-3 rounded-xl mr-4 text-green-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H5a2 2 0 00-2 2zm0 0h18" /></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Specimen</h4>
+                                    <p class="text-xl font-bold text-slate-800 capitalize">{{ plant }}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 class="font-semibold text-lg text-gray-700 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    Diagnosis
-                                </h4>
-                                <p class="text-xl font-bold text-gray-900">{{ prediction }}</p>
+
+                            <div class="flex items-start">
+                                <div class="bg-red-100 p-3 rounded-xl mr-4 text-red-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Diagnosis</h4>
+                                    <p class="text-2xl font-bold text-red-600">{{ prediction }}</p>
+                                </div>
                             </div>
+
+                            <hr class="border-slate-200">
+
                             <div>
-                                 <h4 class="font-semibold text-lg text-gray-700 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-                                    Suggested Solution
+                                <h4 class="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
+                                    Recommended Treatment
                                 </h4>
-                                <p class="text-gray-700 bg-gray-50/50 p-4 rounded-lg border border-white/30">{{ solution }}</p>
+                                <div class="bg-blue-50/50 rounded-xl p-5 border border-blue-100 text-slate-700 leading-relaxed text-sm md:text-base">
+                                    {{ solution }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
-            {% endif %}
-        </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <footer class="text-center mt-20 text-slate-400 text-sm">
+            <p>&copy; 2025 Nano Farm Technologies. AI Plant Diagnostics.</p>
+        </footer>
+
     </div>
 
     <script>
@@ -146,17 +271,19 @@
                 const file = e.target.files[0];
                 if (file) {
                     fileNameDisplay.textContent = file.name;
+                    fileNameDisplay.classList.add('text-slate-600');
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         previewImage.src = event.target.result;
+                        previewImage.classList.remove('hidden');
                         previewImage.style.display = 'block';
                         placeholder.style.display = 'none';
                     }
                     reader.readAsDataURL(file);
                 } else {
-                    fileNameDisplay.textContent = 'No file selected';
+                    fileNameDisplay.textContent = '';
                     previewImage.src = '#';
-                    previewImage.style.display = 'none';
+                    previewImage.classList.add('hidden');
                     placeholder.style.display = 'flex';
                 }
             });
@@ -171,7 +298,11 @@
                 if(resultSection) {
                     resultSection.style.display = 'none';
                 }
-                document.getElementById('loader').style.display = 'block';
+                const loader = document.getElementById('loader');
+                loader.classList.remove('hidden');
+                
+                // Smooth scroll to loader
+                loader.scrollIntoView({ behavior: 'smooth', block: 'center' });
             });
         }
 
